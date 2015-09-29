@@ -1,0 +1,9 @@
+{
+	"mongoUrl": "mongodb://localhost/gliver-chat",
+	"mongo":{
+		"dbname":"gliver-chat",
+		"dbhost":"127.0.0.1",
+		"dbuser":"",
+		"dbpassword":""
+	}
+}
