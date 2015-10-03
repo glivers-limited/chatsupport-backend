@@ -17,13 +17,21 @@ var usersSchema = new Schema({
 		trim:true
 	},
 	password: {
-		type:String,
-		require:true,
-		trim:true
+		type: String,
+		require: true,
+		trim: true
 	},
-	createdAT: {
-		type:Date,
-		default:new Date()
+	createdAt: {
+		type: Date,
+		default: new Date()
+	},
+	isEmailVerified: {
+		type: Boolean,
+		default: false
+	},
+	emailVerificationCode: {
+		type: String,
+		default: Math.random().toString(36).slice(2)
 	},
 	userType: {
 		type:String,
@@ -50,7 +58,10 @@ usersSchema.statics.saveUser = function (userObj, cb) {
   		else if(user)
   			return cb("email id already exist", null);
   		else 
-  			return model.create(userObj, cb);
+  			model.generateMailverificationCode(function (code) {
+  				userObj.emailVerificationCode = code;
+  				return model.create(userObj, cb);
+  			});
   	});
 }
 
@@ -60,6 +71,12 @@ usersSchema.statics.findOneByProp = function (query, cb) {
 	} else {
 		cb("Invalid search query", null);
 	}
+}
+
+//generating mail verification code
+usersSchema.statics.generateMailverificationCode = function (cb) {
+	//here will be random code gererator logic.
+	cb(Math.random().toString(36).slice(2));
 }
 
 
