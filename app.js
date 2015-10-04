@@ -8,7 +8,7 @@ var session = require('express-session');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var config = require('./config.json');
-var routes = require('./api/index');
+var executive = require('./api/executive');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -54,8 +54,24 @@ var initPassport = require('./passport/init');
 initPassport(passport);
 var users = require('./api/users')(passport);
 
-app.use('/', routes);
+app.use('/executive', executive);
 app.use('/users', users);
+
+app.get('/', function(req, res, next) {
+  if(req.session && req.session.user && req.session.user !== undefined) {
+    var user = req.session.user;
+    if(user.userType === 'executive') {
+      res.sendFile(path.join(__dirname, '/views/executive.html'));
+    } else if(user.userType === 'admin') {
+      res.send(200, "comming soon");
+    } else {
+      res.send(200, user);
+    }
+  } else {
+    res.sendFile(path.join(__dirname, '/views/index.html'));
+  }
+});
+
 app.get('/*', function (req, res, next) {
   // body...
   //res.sendFile(path.join(__dirname, 'views/404.html'));

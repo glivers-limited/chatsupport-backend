@@ -16,11 +16,10 @@ module.exports = function (passport) {
 	 * @reurn: Boolean
 	 */
 	router.get('/isLogined', function(req, res, next) {
-		console.log(req.session);
 	  if(req.session && req.session.user) {
-	  	res.send(200,1);
+	  	res.send(200,{isLogined:true, user:req.session.user});
 	  } else {
-	  	res.send(200,0);
+	  	res.send(200,{isLogined:false});
 	  }
 	});
 
@@ -53,20 +52,6 @@ module.exports = function (passport) {
 	 */
 
 	router.post('/login', function (req, res, next) {
-		// passport.authenticate('local', function (err, user, info) {
-		// 	console.log(err, user, info);
-  //              if (err) { return next(err) }
-  //              if (!user) {
-  //                   console.log('bad');
-  //                   req.session.messages = [info.message];
-  //                   return res.redirect('/login')
-  //              }
-  //              req.logIn(user, function (err) {
-  //                   console.log('good');
-  //                   if (err) { return next(err); }
-  //                   return res.redirect('/');
-  //              });
-  //         })(req, res, next);
 		if(!req.body.email) return res.send(200, {success:false, err:"email id missing"});
 		else if(!req.body.password) return res.send(200, {success:false, err:"password missing"});
 		else Users.findOneByProp({email:req.body.email}, function (err, user) {
@@ -75,17 +60,12 @@ module.exports = function (passport) {
 				} else if(user) {
 					if(user.password === req.body.password) {
 						req.session.user = user;
-						req.session._id = user._id;
-						req.session.save(function (argument) {
-							// body...
-							console.log(argument);
-						});
-						console.log(req.session);
+						req.session.save();
 						return res.send(200, {success:true, user:user});
 					} else 
 						res.send(200, {success:false, err:"invalid email or password"});
 				} else {
-					res.send(200, {success:false, err: "Please try again"});
+					res.send(200, {success:false, err: "invalid email or password"});
 				}
 			});
 	});
