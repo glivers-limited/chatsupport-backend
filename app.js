@@ -78,6 +78,34 @@ app.get('/*', function (req, res, next) {
   res.send(404, {error:"Page not found on this server"});
 });
 
+
+
+var users = {};
+var numUsers = 0;
+
+io.sockets.on('connection', function(socket){
+    socket.on('subscribe', function(user) { 
+        users[user._id] = user;
+        console.log('joining room', user);
+        socket.join(user._id); 
+        io.emit('user joined', {
+          user:user
+        });
+    });
+
+    socket.on('unsubscribe', function(room) {  
+        console.log('leaving room', room);
+        socket.leave(room); 
+    });
+
+    socket.on('send', function(data) {
+        console.log('sending message');
+        io.sockets.in(data.room).emit('message', data);
+    });
+});
+
+
+
 http.listen(3000, function(){
   console.log('HTTP server started, listening on *:3000');
 });
