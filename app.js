@@ -12,6 +12,8 @@ var executive = require('./api/executive');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var onlineUsers = {};
+var numUsers = 0;
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -72,6 +74,20 @@ app.get('/', function(req, res, next) {
   }
 });
 
+app.get('/online/users', function (req, res, next) {
+  var user = req.session.user;
+  if(req.session && req.session.user && req.session.user !== undefined) {
+    if(user.userType === 'executive' || user.userType === 'admin') {
+      console.log(onlineUsers);
+      res.send(200, {success:true, onlineUsers:onlineUsers});
+    } else {
+      res.send(200, {success:false});
+    }
+  } else {
+    res.send(200, {success:false});
+  }
+});
+
 app.get('/*', function (req, res, next) {
   // body...
   //res.sendFile(path.join(__dirname, 'views/404.html'));
@@ -80,18 +96,31 @@ app.get('/*', function (req, res, next) {
 
 
 
-var users = {};
-var numUsers = 0;
-
 io.sockets.on('connection', function(socket){
     socket.on('subscribe', function(user) { 
-        users[user._id] = user;
-        console.log('joining room', user);
-        socket.join(user._id); 
-        io.emit('user joined', {
-          user:user
-        });
+      socket.userid = user._id;
+        if(onlineUsers[user._id]) {
+          console.log("already exist");
+        } else {
+          console.log("user joined", user._id);
+          socket.join(user._id);
+          onlineUsers[user._id] = user;
+            io.emit('user joined', {
+              user:user
+            });
+        }
     });
+
+    socket.on('disconnect', function () {
+    // remove the username from global usernames list
+    if (socket.userid) {
+      delete onlineUsers[socket.userid];
+      
+
+      // echo globally that this client has left
+      io.emit('user left', socket.userid);
+    }
+  });
 
     socket.on('unsubscribe', function(room) {  
         console.log('leaving room', room);
@@ -102,12 +131,20 @@ io.sockets.on('connection', function(socket){
         console.log('sending message');
         io.sockets.in(data.room).emit('message', data);
     });
+
+    socket.on('message to user', function(data) {
+        console.log(data);
+        io.emit('private message', data.message);
+        socket.broadcast.to(data.id).emit('conversation private post', {
+            message: data.message
+        });
+    });
 });
 
 
 
-http.listen(3000, function(){
-  console.log('HTTP server started, listening on *:3000');
+http.listen(config.httpPort || 3000, function(){
+  console.log('HTTP server started, listening on *:' + config.httpPort || 3000);
 });
 
 

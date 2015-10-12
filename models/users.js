@@ -84,7 +84,9 @@ usersSchema.statics.generateMailverificationCode = function (cb) {
 
 usersSchema.methods.toJSON = function() {
   var obj = this.toObject()
-  delete obj.password
+  delete obj.password;
+  delete obj.emailVerificationCode;
+  delete obj.createdAt;
   return obj
 }
 

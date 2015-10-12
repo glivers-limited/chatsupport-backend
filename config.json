@@ -1,6 +1,6 @@
 {
 	"appName":"Gliver Chat Support",
-	"appUrl":"http://localhost:3000",
+	"httpPort":3000,
 	"mongoUrl": "mongodb://localhost/gliver-chat",
 	"mongo":{
 		"dbname":"gliver-chat",

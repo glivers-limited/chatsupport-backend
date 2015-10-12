@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Facebook Style Popup Design</title>
+        <title>Glivers Chat</title>
         <style>
             @media only screen and (max-width : 540px) {
                 .chat-sidebar
@@ -103,60 +103,67 @@
             .popup-box .popup-messages
             {
                 height: 100%;
-                overflow-y: scroll;
+                
             }
            
-
+            
+            .chat-message {height:78%;width:100%; overflow-y: scroll;}
+            .new-message {height:10%;width:99%}
 
         </style>
-    </head>
-    <body>
-        <div class="chat-sidebar">
-            <div class="sidebar-name">
-                <!-- Pass username and display name to register popup -->
-                <a href="javascript:register_popup('narayan-prusty', 'Narayan Prusty');">
-                    <span>Narayan Prusty</span>
-                </a>
-            </div>
-            <div class="sidebar-name">
-                <a href="javascript:register_popup('qnimate', 'QNimate');">
-                    <span>QNimate</span>
-                </a>
-            </div>
-            <div class="sidebar-name">
-                <a href="javascript:register_popup('qscutter', 'QScutter');">
-                    <span>QScutter</span>
-                </a>
-            </div>
-            <div class="sidebar-name">
-                <a href="javascript:register_popup('qidea', 'QIdea');">
-                    <span>QIdea</span>
-                </a>
-            </div>
-            <div class="sidebar-name">
-                <a href="javascript:register_popup('qazy', 'QAzy');">
-                    <span>QAzy</span>
-                </a>
-            </div>
-            <div class="sidebar-name">
-                <a href="javascript:register_popup('qblock', 'QBlock');">
-                    <span>QBlock</span>
-                </a>
-            </div>
-        </div>
+
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
        <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
         <script>
-            $(document).ready(function () {
+            
                //this function can remove a array element.
-                var socket = io.connect("http://127.0.0.1:3000");
+                var socket = io.connect(window.document.location.host);
                 users = {};
+
                 socket.on('user joined', function (data) {
-                    users[data.user._id] = data.user;
+                    if(!users[data.user._id]) {
+                        users[data.user._id] = data.user;
+                        updateChatSideBar(data.user);
+                    }
+                });
+
+                socket.on('user left', function (data) {
+                    $("#"+data).remove();
+                    $("#link-"+data).remove();
+                    delete users[data];
+                    
+                });
+
+                $.ajax({
+                      method: "GET",
+                      url: "/online/users",
+                      success: function (data) {
+                          if(data.success) {
+                            for(var x in data.onlineUsers) {
+                                users[x] = data.onlineUsers[x];
+                            }
+
+                            for(var x in users) {
+                                updateChatSideBar(users[x]);
+                            }
+                          } else {
+                            alert("please login first");
+                          }
+                      }
                 });
 
 
+                function updateChatSideBar(user) {
+                    var html = '<div class="sidebar-name" id="link-'+user._id+'">'
+                                    +"<a href='javascript:;' onclick=register_popup('"+user._id+"')>"
+                                        +'<span>'+user.fname +" "+ user.lname+'</span>'
+                                    +'</a>'
+                                +'</div>';
+                    $(".chat-sidebar").append(html);
+                    
+                }
+                
                 Array.remove = function(array, from, to) {
                     var rest = array.slice((to || from) + 1 || array.length);
                     array.length = from < 0 ? array.length + from : from;
@@ -212,9 +219,10 @@
                 }
                
                 //creates markup for a new popup. Adds the id to popups array.
-                function register_popup(id, name)
-                {
-                   
+                function register_popup(id)
+                { 
+                    var name = users[id].fname + " " + users[id].lname;
+                    
                     for(var iii = 0; iii < popups.length; iii++)
                     {  
                         //already registered. Bring it to front.
@@ -235,13 +243,25 @@
                     element = element + '<div class="popup-head">';
                     element = element + '<div class="popup-head-left">'+ name +'</div>';
                     element = element + '<div class="popup-head-right"><a href="javascript:close_popup(\''+ id +'\');">&#10005;</a></div>';
-                    element = element + '<div style="clear: both"></div></div><div class="popup-messages"></div></div>';
+                    element = element + '<div style="clear: both"></div></div><div class="popup-messages">'
+                        +'<div class="chat-message" id="message-'+id+'"></div>'
+                        +'<textarea class="new-message" id="new-'+id+'"></textarea>'
+                    +'</div></div>';
                    
                     document.getElementsByTagName("body")[0].innerHTML = document.getElementsByTagName("body")[0].innerHTML + element; 
-           
+                    //$('body').push(element);
+                    //$('body').html($('body').html() + element);
                     popups.unshift(id);
                            
                     calculate_popups();
+
+                    $('textarea[id="new-'+id+'"]').keydown(function (e) {
+                        console.log(e.keyCode);
+                      if (e.keyCode == 13) {
+                        socket.emit('message to user', {message:$(this).val(), id:id});
+                        $(this).val('');
+                      }
+                    });
                    
                 }
                
@@ -262,8 +282,9 @@
                 //recalculate when window is loaded and also when window is resized.
                 window.addEventListener("resize", calculate_popups);
                 window.addEventListener("load", calculate_popups);
-                
-            });
         </script>
+    </head>
+    <body>
+        <div class="chat-sidebar"></div>
     </body>
 </html>
