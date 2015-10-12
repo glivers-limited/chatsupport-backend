@@ -65,7 +65,7 @@
             {
                 display: none;
                 position: fixed;
-                bottom: 0px;
+                bottom: 25px;
                 right: 220px;
                 height: 285px;
                 background-color: rgb(237, 239, 244);
@@ -108,7 +108,25 @@
            
             
             .chat-message {height:78%;width:100%; overflow-y: scroll;}
-            .new-message {height:10%;width:99%}
+            .new-message {height:10%;width:99%;margin: 4px -2px}
+            .server-message {
+              float: left;
+              background: lightgray;
+              padding-right: 5px;
+              padding-left: 5px;
+              padding-top: 2px;
+              padding-bottom: 2px;
+              border-radius: 2px;
+            }
+            .my-message {
+              float: right;
+              background: lightblue;
+              padding-right: 5px;
+              padding-left: 5px;
+              padding-top: 2px;
+              padding-bottom: 2px;
+              border-radius: 2px;
+            }
 
         </style>
 
@@ -126,6 +144,12 @@
                         users[data.user._id] = data.user;
                         updateChatSideBar(data.user);
                     }
+                });
+
+                socket.on('user message', function (data) {
+                    console.log(data);
+                    register_popup(data.id);
+                    $("#message-"+data.id).append("<br><p><span class='server-message'>"+data.message+"</span></p>");
                 });
 
                 socket.on('user left', function (data) {
@@ -244,8 +268,10 @@
                     element = element + '<div class="popup-head-left">'+ name +'</div>';
                     element = element + '<div class="popup-head-right"><a href="javascript:close_popup(\''+ id +'\');">&#10005;</a></div>';
                     element = element + '<div style="clear: both"></div></div><div class="popup-messages">'
-                        +'<div class="chat-message" id="message-'+id+'"></div>'
-                        +'<textarea class="new-message" id="new-'+id+'"></textarea>'
+                        +'<div class="chat-message" id="message-'+id+'" style="height:250px;display:table-cell;width:295px;position:relative;vertical-align:bottom;">'
+                            
+                        +'</div>'
+                        +'<input type="text" class="new-message" id="new-'+id+'"/>'
                     +'</div></div>';
                    
                     document.getElementsByTagName("body")[0].innerHTML = document.getElementsByTagName("body")[0].innerHTML + element; 
@@ -255,14 +281,13 @@
                            
                     calculate_popups();
 
-                    $('textarea[id="new-'+id+'"]').keydown(function (e) {
-                        console.log(e.keyCode);
+                    $('input[id="new-'+id+'"]').keydown(function (e) {
                       if (e.keyCode == 13) {
                         socket.emit('message to user', {message:$(this).val(), id:id});
+                        $("#message-"+id).append("<br><p><span class='my-message'>"+$(this).val()+"</span></p>");
                         $(this).val('');
                       }
                     });
-                   
                 }
                
                 //calculate the total number of popups suitable and then populate the toatal_popups variable.

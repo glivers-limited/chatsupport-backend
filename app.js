@@ -112,15 +112,13 @@ io.sockets.on('connection', function(socket){
     });
 
     socket.on('disconnect', function () {
-    // remove the username from global usernames list
-    if (socket.userid) {
-      delete onlineUsers[socket.userid];
-      
-
-      // echo globally that this client has left
-      io.emit('user left', socket.userid);
-    }
-  });
+      // remove the username from global usernames list
+      if (socket.userid) {
+        delete onlineUsers[socket.userid];
+        // echo globally that this client has left
+        io.emit('user left', socket.userid);
+      }
+    });
 
     socket.on('unsubscribe', function(room) {  
         console.log('leaving room', room);
@@ -133,11 +131,13 @@ io.sockets.on('connection', function(socket){
     });
 
     socket.on('message to user', function(data) {
-        console.log(data);
-        io.emit('private message', data.message);
         socket.broadcast.to(data.id).emit('conversation private post', {
             message: data.message
         });
+    });
+    socket.on('send message', function(data) {
+        console.log(data);
+        io.emit('user message', data);
     });
 });
 
